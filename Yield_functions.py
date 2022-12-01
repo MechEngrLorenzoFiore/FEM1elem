@@ -21,7 +21,7 @@ import jax.lax as jlx
 from jax import grad
 import numpy as np
 from matplotlib import pyplot as plt
-
+import matplotlib
 
 def VonMises(sig, A, params):
     # Von Mises yield function
@@ -96,8 +96,8 @@ if __name__ == "__main__":
     (M, pc, c, alpha, m, beta, gamma) = A
     delta = pc/100
     
-    xrange = np.arange(-1.5*c, 1.5*pc, delta)
-    yrange = np.arange(-1.5*M*pc/2, 1.5*M*pc/2, delta)
+    xrange = np.arange(-1.2*pc, 1.2*pc, delta)
+    yrange = np.arange(-2*M*pc/2, 2*M*pc/2, delta)
     invp, invq = np.meshgrid(xrange,yrange)
     
     # calculation of BPsquared
@@ -108,13 +108,31 @@ if __name__ == "__main__":
     F = finvpsqr + invq**2/gtheta**2
     F = F/pc**2
     
-    CS = plt.contour(invp, invq, F , levels=50)
+    # plot settings
+    figdpi = 600
+    axlebelfont = 8 #[pt]
+    axtickfont = axlebelfont - 1 #[pt]
+    width = 12 #[cm]
+    heigth = 9 #[cm]
+    
+    fig = plt.figure(figsize=(width/2.54, heigth/2.54), dpi=figdpi)
+    
+    matplotlib.rc('xtick', labelsize=axtickfont) 
+    matplotlib.rc('ytick', labelsize=axtickfont) 
+    
+    CS = plt.contour(invp, invq, F , levels=20)
     plt.xlabel("p [Pa]")
     plt.ylabel("q [Pa]")
     plt.clabel(CS, inline=1, fontsize=10)
     plt.grid()
     plt.title("BPsquared")
-    plt.show()
+    if True:        
+        from datetime import datetime
+        now = datetime.now()
+        dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
+        plt.savefig("BPsquared_" + dt_string + ".png", dpi=figdpi, bbox_inches='tight')
+    else:
+        plt.show()
 
     
 

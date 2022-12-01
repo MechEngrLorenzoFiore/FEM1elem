@@ -20,9 +20,16 @@ import math
 import jax.numpy as jnp
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib
 
+# ----------------------------------------------------------------
+# Evolution laws of parameters with temperature
+# ----------------------------------------------------------------
 
 def Bezier_pc_T_hardening(T ,T_params):        
+    # WARNING! This function suffers of a bug in the definition, if you ack for a 
+    # temperature on the definition extreme it will fail!!!
+    
     (pc0, T0, angle_at_T0, pcTmax, Tmax, angle_at_Tmax, pc_intersection_at_Tc, Tc, angle_at_Tc) = T_params
       
     scale_factor = 1e6
@@ -92,6 +99,17 @@ def Bezier_pc_T_hardening(T ,T_params):
     return pc_T*scale_factor
 
 
+def Penasa_2017_pc_T_hardening(T, T_params):
+    
+    (Apc, Bpc, Cpc, T0pc) = T_params
+    
+    pcT = Apc - Bpc*jnp.tanh((T - T0pc)/Cpc)
+    
+    return pcT
+
+# ----------------------------------------------------------------
+# Evolution laws of parameters with cumulated plastic strain
+# ----------------------------------------------------------------
 
 def modCamClay_hardening(alp, T, params):
     # unpack params tuple
@@ -104,8 +122,7 @@ def modCamClay_hardening(alp, T, params):
     A = jnp.array([M, pc, c])
     return A
 
-
-def BPsquared_hardening(alp, T, params):
+def BPsquared_hardening_Bezier_T_linear_alp(alp, T, params):
     T_params = params[7:]
     pcT = Bezier_pc_T_hardening(T, T_params)
     
@@ -115,10 +132,38 @@ def BPsquared_hardening(alp, T, params):
     A = jnp.array([M, pc, c, alpha, m, beta, gamma])
     return A
 
-def BPsquared_hardening_Penasa_2017(alp, T, params):
-    (omega, M, alpha, m, beta, gamma, Apc, Bpc, Cpc, T0pc, Ak1, Bk1, Ck1, T0k1, delta0, T0delta, TF) = params
+def BPsquared_hardening_Bezier_T_Penasa_2017_alp(alp, T, params):
+    (omega, M, alpha, m, beta, gamma,
+     Ak1, Bk1, Ck1, T0k1, delta0, T0delta, TF,
+     pc0, T0, angle_at_T0, 
+     pcTmax, Tmax, angle_at_Tmax, 
+     pc_intersection_at_Tc, Tc, angle_at_Tc) = params
     
-    pcT = Apc - Bpc*jnp.tanh((T - T0pc)/Cpc)
+    T_params = (pc0, T0, angle_at_T0, pcTmax, Tmax, angle_at_Tmax, pc_intersection_at_Tc, Tc, angle_at_Tc)
+
+    pcT = Bezier_pc_T_hardening(T, T_params)
+    
+    k1T = Ak1 - Bk1*jnp.tanh((T - T0k1)/Ck1)
+    
+    deltaT = delta0 * jnp.exp(- (T-T0delta)/(T-TF) )
+    
+    pc = pcT  + k1T*alp/(1+deltaT*alp)
+    
+    c = omega*pc
+    A = jnp.array([M, pc, c, alpha, m, beta, gamma])
+    return A
+
+def BPsquared_hardening_Penasa_2017(alp, T, params):
+    (omega, M, alpha, m, beta, gamma, 
+     Apc, Bpc, Cpc, T0pc, 
+     Ak1, Bk1, Ck1, T0k1, delta0, T0delta, TF) = params
+    
+    T_params = (Apc, Bpc, Cpc, T0pc)
+    
+    pcT = Penasa_2017_pc_T_hardening(T, T_params)
+    # pcT = Apc - Bpc*jnp.tanh((T - T0pc)/Cpc)
+    
+    print(pcT)
     
     k1T = Ak1 - Bk1*jnp.tanh((T - T0k1)/Ck1)
     
@@ -133,30 +178,105 @@ def BPsquared_hardening_Penasa_2017(alp, T, params):
 
 # # simple tests on the hardening laws
 if __name__ == "__main__":
-    # (M, pc, c, alpha, m, beta, gamma)
-    A = (1, 250e6, .2*250e6)
     
-    M, pc, c = A
-
-    Tparams = (80e6, 20, 0, 60e6, 1200, 0, 70e6, 600, 0.98*3.14)
-
-    N_steps = 20
-    T_step = np.linspace(21,1199,num=N_steps)
+    test = "pcT"
+    # test = "Aalp"
     
-    pcT = np.zeros(N_steps)
-    for j in range(0,N_steps):
-        val = modCamClay_hardening(0, T_step[j],Tparams)
-        pcT[j] =  val
-        print("T:", T_step[j], "\t", "pc(T):", val)
+    if test == "pcT":
+                               # (Apc, Bpc, Cpc, T0pc)
+        T_params_Penasa_2017 = (158e6, 43.5e6, 200, 651)
     
-    plt.plot(T_step, pcT,'-bo')
-    plt.grid()
-    plt.show()
+                         # (pc0, T0, angle_at_T0, 
+                         #  pcTmax, Tmax, angle_at_Tmax, 
+                         #  pc_intersection_at_Tc, Tc, angle_at_Tc)
+        T_params_Bezier = (201340528, 20, 0,
+                           114861232, 1200, 0,
+                           160173184, 641,  0.89*3.14)
+    
+        N_steps = 20
+        T_step = np.linspace(21,1199,num=N_steps)
+        
+        pcT = np.zeros((N_steps, 2))
+        
+        print(" \t\t T \t\t pc(T) Penasa \t\t pc(T) Bezier")
+        print(20*3*"-")
+        for i in range(0,N_steps):
+            pcT[i,0] = Penasa_2017_pc_T_hardening(T_step[i], T_params_Penasa_2017)
+            pcT[i,1] = Bezier_pc_T_hardening(T_step[i], T_params_Bezier)
+            print("%10d \t\t %10.2f \t\t %10.2f" %(T_step[i], pcT[i,0], pcT[i,1]) )
+        
+        
+        # plot settings
+        figdpi = 600
+        axlebelfont = 8 #[pt]
+        axtickfont = axlebelfont - 1 #[pt]
+        width = 12 #[cm]
+        heigth = 9 #[cm]
+        
+        fig = plt.figure(figsize=(width/2.54, heigth/2.54), dpi=figdpi)
+        
+        matplotlib.rc('xtick', labelsize=axtickfont) 
+        matplotlib.rc('ytick', labelsize=axtickfont) 
 
+        plt.plot(T_step, pcT[:,0]/1e6,'-bo', label="Penasa_2017_pc_T_hardening")
+        plt.plot(T_step, pcT[:,1]/1e6,'-ro', label="Bezier_pc_T_hardening")
+        
+        plt.xlabel("T [°C]")
+        plt.ylabel("pc [MPa]")
+        plt.legend( 
+                   # title=model.replace(" ","\n"),
+                   title_fontsize=axtickfont,
+                   fontsize=axtickfont,
+                   # markerscale=.8,
+                   frameon=False,
+                                # (x, y, width, height)
+                   # bbox_to_anchor=(1, .5, 0.2, 0.2),
+                   loc='best') 
+        plt.grid()
 
+        if False:        
+            from datetime import datetime
+            now = datetime.now()
+            dt_string = now.strftime("%Y-%m-%d-%H-%M-%S")
+            plt.savefig("pcT_confronto" + dt_string + ".png", dpi=figdpi, bbox_inches='tight')
+        else:
+            plt.show()
 
+    elif test == "Aalp":
 
+                            # (omega, M, alpha, m, beta, gamma, 
+                            # Apc, Bpc, Cpc, T0pc,
+                            # Ak1, Bk1, Ck1, T0k1, delta0, T0delta, TF) 
+        params_Penasa_2017 = (0.012, 0.773, 0.264, 2.125, 0.75, 0.7,
+                              158e6, 43.5e6, 200, 651,
+                              119e9, 0, 1, 0, 922, 0, 0) 
 
+                        # (omega, M, alpha, m, beta, gamma,
+                        #  Ak1, Bk1, Ck1, T0k1, delta0, T0delta, TF,
+                        #  pc0, T0, angle_at_T0, 
+                        # pcTmax, Tmax, angle_at_Tmax, 
+                        # pc_intersection_at_Tc, Tc, angle_at_Tc)
+        params_Bezier = (0.012, 0.773, 0.264, 2.125, 0.75, 0.7,
+                         119e9, 0, 1, 0, 922, 0, 0,
+                         201340528, 20, 0,
+                         114861232, 1200, 0,
+                         160173184, 641,  0.89*3.14)
+                         
+        N_steps = 20
+        alp_step = np.linspace(0,0.001,num=N_steps)
+        T = 21
+        
+        for i in range(0,N_steps):
+            A_Penasa = BPsquared_hardening_Penasa_2017(alp_step[i], T, params_Penasa_2017)
+            A_Bezier = BPsquared_hardening_Bezier_T_Penasa_2017_alp(alp_step[i], T, params_Bezier)
+            print("T = ", T, 80*"-")
+            [print("%10.2g" %a, end="\t") for a in A_Penasa]
+            print("")
+            [print("%10.2g" %a, end="\t") for a in A_Bezier]
+            print("")
+                         
+        
+        
 
 
 

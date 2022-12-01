@@ -35,7 +35,7 @@ class Material:
         self.YieldFunction = YieldFunction
         self.TOL_r = 1e-8
         self.TOL_f = 1e-5
-        self.MaxNewton = 100
+        self.MaxNewton = 50
         self.DEBUG = False
 
     def Voigt_stress(self, eps_Voigt, GP_STATEV, T, STATEV_lck):        
@@ -291,7 +291,7 @@ class PDE_problem:
         self.STATEV_History = []
         # Class constants
         self.TOL_r = 1e-1
-        self.MaxNewton = 50
+        self.MaxNewton = 10
         
     def Solutor_NL_statics_displ_control(self):
         def Newton_solve_NL_statics_displ_control(u, T, n):
