@@ -66,10 +66,10 @@ gam = 0
 # ----------------------------------------------------------------
 
 # prescribed displacement at selected dofs
-displ_value = -0.012
+displ_value = -0.002
 
 # Step definition
-N_steps = 30
+N_steps = 10
 
 # Definition of temperature for each step
 T0 = 600

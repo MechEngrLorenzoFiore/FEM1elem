@@ -23,9 +23,7 @@ import matplotlib
 # List the simulations you want to compare
 # ----------------------------------------------------------------
 
-simulations = ["test_2022-12-01-03-14-28",
-               # "test_2022-12-01-12-58-44",
-               "test_2022-12-01-17-57-56"]
+simulations = ["test_2022-12-02-16-27-40"]
 
 # ----------------------------------------------------------------
 # Set plot colors and figure size and properties
