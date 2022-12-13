@@ -14,10 +14,10 @@ import jax.numpy as jnp
 modules1 = dir()
 
 # import the user created modules from the respective files
-from FEM1elem_V3R1 import Material, Finite_Element, PDE_problem
-from Elastic_Potential_V1R1 import linear_elasticity
-from Yield_functions_V1R1 import BPsquared
-from Hardening_laws_V0R1 import BPsquared_hardening_Penasa_2017
+from FEM1elem_engine import Material, Finite_Element, PDE_problem
+from Elastic_Potentials import linear_elasticity
+from Yield_functions import BPsquared
+from Hardening_laws import BPsquared_hardening_Penasa_2017
 
 # Track the imported modules
 modules2 = dir()
@@ -35,7 +35,23 @@ testscript = os.path.basename(__file__)
 # Material definition
 Elas_params = (1e9, 0.07)
 # (omega, M, alpha, m, beta, gamma, Apc, Bpc, Cpc, T0pc, Ak1, Bk1, Ck1, T0k1, delta0, T0delta, TF) 
-Hard_params = (0.012, 0.773, 0.264, 2.125, 0.75, 0.7, 158e6, 43.5e6, 200, 651, 119e9, 0, 1, 0, 922, 0, 0) 
+Hard_params = (0.012,   # omega
+               0.773,   # M
+               0.264,   # alpha
+               2.125,   # m
+               0.75,    # beta
+               0.7,     # gamma
+               158e6,   # Apc
+               43.5e6,  # Bpc
+               200,     # Cpc
+               651,     # T0pc
+               119e9,   # Ak1
+               0,       # Bk1
+               1,       # Ck1
+               0,       # T0k1
+               922,     # delta0
+               20,       # T0delta
+               1200)       # 0
 Yield_params = ()
 params = (Elas_params, Hard_params, Yield_params)
 
@@ -63,7 +79,7 @@ gam = 0
 displ_value = -0.012
 
 # Step definition
-N_steps = 50
+N_steps = 30
 
 # Definition of temperature for each step
 T0 = 600

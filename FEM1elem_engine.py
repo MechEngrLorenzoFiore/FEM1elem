@@ -326,6 +326,7 @@ class PDE_problem:
             uf = uf + Duf
 
             normr = jnp.linalg.norm(r, ord=2)
+            oldnormr = normr
             print(f"Global residual norm {normr:20.2E} ")
             k = 0
             while normr > self.TOL_r:
@@ -338,6 +339,11 @@ class PDE_problem:
                 uf = uf + Duf
                 normr = jnp.linalg.norm(r, ord=2)
                 print(f"Global residual norm {normr:20.2E} ")
+                if normr < 1e0 and normr > oldnormr:
+                    print("Not monotonically converging thus stopped to save time")
+                    print("WARNING: there is an hard coded value in this feature which must tbe checked!")
+                    break
+                oldnormr = normr
                 k += 1
 
             self.STATEV_History.append(updated_elems_STATEV)

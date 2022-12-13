@@ -163,8 +163,6 @@ def BPsquared_hardening_Penasa_2017(alp, T, params):
     pcT = Penasa_2017_pc_T_hardening(T, T_params)
     # pcT = Apc - Bpc*jnp.tanh((T - T0pc)/Cpc)
     
-    print(pcT)
-    
     k1T = Ak1 - Bk1*jnp.tanh((T - T0k1)/Ck1)
     
     deltaT = delta0 * jnp.exp(- (T-T0delta)/(T-TF) )

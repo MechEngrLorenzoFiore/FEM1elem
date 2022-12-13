@@ -23,7 +23,7 @@ import matplotlib
 # List the simulations you want to compare
 # ----------------------------------------------------------------
 
-simulations = ["test_2022-12-02-16-27-40"]
+simulations = ["test_2022-12-12-12-44-02"]
 
 # ----------------------------------------------------------------
 # Set plot colors and figure size and properties
@@ -74,7 +74,7 @@ for i, c in zip(range(n), colors):
 plt.xlabel("E11 [mm/mm]", fontsize=axlebelfont )
 plt.ylabel("S11 [MPa]", fontsize=axlebelfont )
 plt.xlim([0,0.013])
-plt.ylim([0,55])
+plt.ylim([0,25])
 plt.legend( 
            # title=model.replace(" ","\n"),
            title_fontsize=axtickfont,
